@@ -1,18 +1,18 @@
 'use babel';
 
-import AtomPluginView from './atom-plugin-view';
+import FractiveEditorView from './fractive-editor-view';
 import { CompositeDisposable } from 'atom';
 
 export default {
 
-  atomPluginView: null,
+  fractiveEditorView: null,
   modalPanel: null,
   subscriptions: null,
 
   activate(state) {
-    this.atomPluginView = new AtomPluginView(state.atomPluginViewState);
+    this.fractiveEditorView = new FractiveEditorView(state.fractiveEditorViewState);
     this.modalPanel = atom.workspace.addModalPanel({
-      item: this.atomPluginView.getElement(),
+      item: this.fractiveEditorView.getElement(),
       visible: false
     });
 
@@ -21,24 +21,24 @@ export default {
 
     // Register command that toggles this view
     this.subscriptions.add(atom.commands.add('atom-workspace', {
-      'atom-plugin:toggle': () => this.toggle()
+      'fractive-editor:toggle': () => this.toggle()
     }));
   },
 
   deactivate() {
     this.modalPanel.destroy();
     this.subscriptions.dispose();
-    this.atomPluginView.destroy();
+    this.fractiveEditorView.destroy();
   },
 
   serialize() {
     return {
-      atomPluginViewState: this.atomPluginView.serialize()
+      fractiveEditorViewState: this.fractiveEditorView.serialize()
     };
   },
 
   toggle() {
-    console.log('AtomPlugin was toggled!');
+    console.log('FractiveEditor was toggled!');
     return (
       this.modalPanel.isVisible() ?
       this.modalPanel.hide() :

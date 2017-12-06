@@ -1,15 +1,15 @@
 'use babel';
 
-export default class AtomPluginView {
+export default class FractiveEditorView {
 
   constructor(serializedState) {
     // Create root element
     this.element = document.createElement('div');
-    this.element.classList.add('atom-plugin');
+    this.element.classList.add('fractive-editor');
 
     // Create message element
     const message = document.createElement('div');
-    message.textContent = 'The AtomPlugin package is Alive! It\'s ALIVE!';
+    message.textContent = 'The FractiveEditor package is Alive! It\'s ALIVE!';
     message.classList.add('message');
     this.element.appendChild(message);
   }

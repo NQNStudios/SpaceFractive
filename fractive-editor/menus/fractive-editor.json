@@ -2,8 +2,8 @@
   "context-menu": {
     "atom-text-editor": [
       {
-        "label": "Toggle atom-plugin",
-        "command": "atom-plugin:toggle"
+        "label": "Toggle fractive-editor",
+        "command": "fractive-editor:toggle"
       }
     ]
   },
@@ -12,11 +12,11 @@
       "label": "Packages",
       "submenu": [
         {
-          "label": "atom-plugin",
+          "label": "fractive-editor",
           "submenu": [
             {
               "label": "Toggle",
-              "command": "atom-plugin:toggle"
+              "command": "fractive-editor:toggle"
             }
           ]
         }
