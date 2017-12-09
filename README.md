@@ -1,3 +1,14 @@
+# SpaceFractive
+
+SpaceFractive is a fork of Josh Sutphin's
+[Fractive](http://github.com/inviciticde/fractive) engine for authoring
+hypertext interactive fiction. SpaceFractive integrates another HTML5 game
+engine, [Phaser](http://phaser.io) to extend Fractive with features for dynamic
+2D graphics and audio.
+
+Like Fractive itself, SpaceFractive is under construction, and will be for
+[like, a really long time](https://www.youtube.com/watch?v=-pynAxJAadU).
+
 # Fractive
 
 > NOTE: Fractive is in **very early** development and is not even remotely ready for prime-time. You probably shouldn't use it yet!
