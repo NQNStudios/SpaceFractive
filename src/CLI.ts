@@ -139,7 +139,7 @@ else
 		{
 			// compile <storyDirectory|configFilePath> [options]
 			case "compile": { Compile(process.argv.slice(i + 1)); break; }
-	
+
 			// create <storyDirectory>
 			case "create": { Create(process.argv.slice(i + 1)); break; }
 		}
