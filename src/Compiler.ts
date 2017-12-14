@@ -73,7 +73,8 @@ export let ProjectDefaults : FractiveProject = {
 			prepend: false
 		}
 	},
-	backButtonHTML: ""
+	includeBackButton: true,
+	backButtonHTML: "Back"
 };
 import * as globby from "globby";
 
@@ -139,7 +140,14 @@ export namespace Compiler
 
 		// Insert html-formatted story text
 		template = template.split("<!--{story}-->").join(html);
-		
+
+		// Insert the back button if specified to do so
+		if(project.includeBackButton)
+		{
+			let backButtonHTML = '<a href="javascript:Core.GotoPreviousSection();">' + project.backButtonHTML + '</a>';
+			template = template.split("<!--{backButton}-->").join(backButtonHTML);
+		}
+
 		// Auto-start at the "Start" section
 		template += "<script>Core.GotoSection(\"Start\");</script>";
 
@@ -201,7 +209,7 @@ export namespace Compiler
 		// files to only specify those properties which they want to override.
 		let targetProject : FractiveProject = JSON.parse(fs.readFileSync(buildPath, "utf8"));
 		let validator = new ajv();
-		let valid = validator.validate(JSON.parse(fs.readFileSync("src/ProjectSchema.json", "utf8")), targetProject);
+		let valid = validator.validate(JSON.parse(fs.readFileSync(path.join(__dirname, "../src/ProjectSchema.json"), "utf8")), targetProject);
 		if(!valid)
 		{
 			LogError(`  ${buildPath}: Failed validating JSON`);
@@ -638,19 +646,22 @@ export namespace Compiler
 	}
 
 	/**
-	* Check if a URL is considered external and its link should be marked
-	* with the external link mark defined in fractive.json
-	* @param url
+	* Check if a URL is considered external and its link should be marked with the external link mark defined in snap.json
+	* @param url The URL string to check
 	*/
-	// @ts-ignore Unused function argument, until this stub gets expanded
-	function IsExternalLink(url: string)
+	function IsExternalLink(url : string)
 	{
-		// TODO I imagine if the user wants to link to pages on their own site,
-		// the external link icon will be unwanted. To account for this in the
-		// future, we could define a glob expression for urls that are internal
-		// to the game, and filter those out. For now, everything is considered
-		// external.
-		return true;
+		let tokens : Array<string> = url.split("/");
+		switch(tokens[0].toLowerCase())
+		{
+			case "http:":
+			case "https:":
+			case "mailto:":
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -740,16 +751,18 @@ export namespace Compiler
 					{
 						event.node.appendChild(newNode);
 					}
-			return true;
+					return true;
 				}
 				else
 				{
-					// Prepending _ to the id makes this :inline macro disabled by default. It gets enabled when it's moved
-					// into the __currentSection div.
+					// Setting href=javascript:; instead of href=# prevents the browser from resetting the scroll position on click
 					let attrs = [
-						{ attr: "href", value: "#" },
+						{ attr: "href", value: "javascript:;" },
 						{ attr: "data-replace-with", value: url }
 					];
+
+					// Prepending _ to the id makes this :inline macro disabled by default. It gets enabled when it's moved
+					// into the __currentSection div.
 					return RewriteLinkNode(event.node, attrs, `_inline-${nextInlineID++}`);
 				}
 			}
