@@ -33,12 +33,8 @@
     "cli-color": "^1.2.0",
     "commonmark": "^0.28.1",
     "globby": "^7.1.1",
-<<<<<<< HEAD
     "html-minifier": ">=3.5.5",
     "http-server": "^0.10.0",
-=======
-    "html-minifier": "^3.5.5",
->>>>>>> 5af48c26f4795875afaaaaec65933242c0735b9f
     "js-beautify": "^1.7.4",
     "json-override": "^0.2.0",
     "json-schema-to-typescript": "^5.1.0",
