@@ -1,3 +1,5 @@
+// TODO depending on project.outputFormat, copy and include either phaser.js or phaser.min.js
+
 /*
 Fractive: A hypertext authoring tool -- https://github.com/invicticide/fractive
 Copyright (C) 2017 Josh Sutphin
@@ -80,7 +82,7 @@ export let ProjectDefaults : FractiveProject = {
 		}
 	},
 	includeBackButton: true,
-	backButtonHTML: "Back"
+	backButtonHtml: "Back"
 };
 import * as globby from "globby";
 
@@ -166,6 +168,9 @@ export namespace Compiler
 		// Insert all bundled scripts, including Core.js
 		scriptSection += `${javascript}`;
 		scriptSection += "</script>";
+		// Insert Phaser
+		scriptSection += `<script type="text/javascript" src="phaser.js"></script>"`;
+
 		template = InsertHtmlAtMark(scriptSection, template, 'script');
 
 		// Insert html-formatted story text
@@ -182,6 +187,7 @@ export namespace Compiler
 		template += "<script>";
 		// Initialize the Phaser game
 		let args = project.phaserArguments;
+		// TODO validate that user's scripts define __preload, etc., maybe at runtime.
 		template += `var phaser = new Phaser.Game(${args.width}, ${args.height}, Phaser.AUTO, '__phaser', { preload: __preload, create: __create, update: __update, render: __render }, ${args.transparent}, ${args.antialias});`;
 		// Auto-start at the story section called "Start"
 		template += "Core.GotoSection(\"Start\");";
@@ -330,6 +336,9 @@ export namespace Compiler
 				fs.copyFileSync(sourcePath, destPath);
 			}
 		}
+
+		// Copy Phaser library file
+		fs.copyFileSync('phaser-ce/build/phaser.js', path.resolve(outputDir, 'phaser.js'));
 
 		// Write the final index.html. We report this after copying assets, even though we actually prepared it before,
 		// because it feels more natural to have the last reported output file be the file that actually runs our game.

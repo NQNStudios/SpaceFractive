@@ -479,6 +479,7 @@ and something different if they don't.";
 
         var InlineExpansionVariable = "variable (a string which will replace the link)";
     </script>
+    <script type="text/javascript" src="phaser.js"></script>"
     <script>
         function __Restart() {
             location.reload();
@@ -529,6 +530,7 @@ and something different if they don't.";
 </head>
 
 <body>
+    <div id="__phaser"></div>
     <div id="__content">
         <!-- source/text.md -->
         <div id="Start" class="section" hidden="true">
@@ -627,5 +629,11 @@ and something different if they don't.";
 
 </html>
 <script>
+    var phaser = new Phaser.Game(480, 800, Phaser.AUTO, '__phaser', {
+        preload: __preload,
+        create: __create,
+        update: __update,
+        render: __render
+    }, false, true);
     Core.GotoSection("Start");
 </script>

@@ -470,6 +470,7 @@
             NestedVariable: "Nested variable!"
         };
     </script>
+    <script type="text/javascript" src="phaser.js"></script>"
     <script>
         function __Restart() {
             location.reload();
@@ -520,6 +521,7 @@
 </head>
 
 <body>
+    <div id="__phaser"></div>
     <div id="__content">
         <!-- source/text.md -->
         <div id="TestSection" class="section" hidden="true">
@@ -727,5 +729,11 @@
 
 </html>
 <script>
+    var phaser = new Phaser.Game(480, 800, Phaser.AUTO, '__phaser', {
+        preload: __preload,
+        create: __create,
+        update: __update,
+        render: __render
+    }, false, true);
     Core.GotoSection("Start");
 </script>
