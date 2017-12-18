@@ -168,10 +168,6 @@ export namespace Compiler
 		scriptSection += "</script>";
 		template = InsertHtmlAtMark(scriptSection, template, 'script');
 
-		// Insert a div for Phaser to insert its canvas into
-		let phaserSection : string = `<div id="__phaser"></div>`;
-		template = InsertHtmlAtMark(phaserSection, template, 'phaser');
-
 		// Insert html-formatted story text
 		template = InsertHtmlAtMark(html, template, 'story');
 
