@@ -52,6 +52,12 @@ export let ProjectDefaults : FractiveProject = {
 	ignore: [],
 	aliases: [],
 	template: "template.html",
+	phaserArguments: {
+		width: 480,
+		height: 800, // Portrait-oriented window for mobile compatibility
+		transparent: false,
+		antialias: true
+	},
 	output: "build",
 	outputFormat: "prettify",
 	linkTooltips: false,
@@ -162,6 +168,10 @@ export namespace Compiler
 		scriptSection += "</script>";
 		template = InsertHtmlAtMark(scriptSection, template, 'script');
 
+		// Insert a div for Phaser to insert its canvas into
+		let phaserSection : string = `<div id="__phaser"></div>`;
+		template = InsertHtmlAtMark(phaserSection, template, 'phaser');
+
 		// Insert html-formatted story text
 		template = InsertHtmlAtMark(html, template, 'story');
 
@@ -172,8 +182,14 @@ export namespace Compiler
 			template = InsertHtmlAtMark(backButtonHtml, template, 'backButton');
 		}
 
-		// Auto-start at the "Start" section
-		template += "<script>Core.GotoSection(\"Start\");</script>";
+		// Insert the story's "main method".
+		template += "<script>";
+		// Initialize the Phaser game
+		let args = project.phaserArguments;
+		template += `var phaser = new Phaser.Game(${args.width}, ${args.height}, Phaser.AUTO, '__phaser', { preload: __preload, create: __create, update: __update, render: __render }, ${args.transparent}, ${args.antialias});`;
+		// Auto-start at the story section called "Start"
+		template += "Core.GotoSection(\"Start\");";
+		template += "</script>";
 
 		if(project.outputFormat === 'minify')
 		{
