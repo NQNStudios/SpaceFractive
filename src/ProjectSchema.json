@@ -46,6 +46,15 @@
 			"description": ""
 		},
 		"template": { "type": "string", "description": "The HTML template file to use for the final story output" },
+		"phaserArguments": {
+			"type": "object",
+			"properties": {
+				"width": { "type": "number", "description": "Width of the Phaser canvas" },
+				"height": { "type": "number", "description": "Height of the Phaser canvas" },
+				"transparent": { "type": "boolean", "description": "Whether to give the canvas a transparent background" },
+				"antialias": { "type": "boolean", "description": "Whether to antialias textures. Set false for pixel art." }
+			}
+		},
 		"output": { "type": "string", "description": "The folder where the final story files will be saved" },
 		"outputFormat": { "enum": [ "prettify", "minify", "default" ], "description": "Options: 'minify' to minify the final story HTML (reduces file size but makes the HTML source much less human-readable), 'prettify' to prettify the final story HTML into human-readable HTML, 'default' for no additional processing"  },
 		"linkTooltips": { "type": "boolean", "description": "If true, show a tooltip on macro links indicating the macro destination. (Useful for dev, but you probably want to disable it for release.)" },
