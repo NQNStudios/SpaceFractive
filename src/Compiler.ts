@@ -194,7 +194,7 @@ export namespace Compiler
 		template += `var args = ` + JSON.stringify(args) + ";";
 
 		// Inject StoryMain.js
-		template += fs.readFileSync('src/StoryMain.js');
+		template += fs.readFileSync(__dirname + '/../src/StoryMain.js');
 
 		template += "};";
 		template += "</script>";
@@ -344,7 +344,7 @@ export namespace Compiler
 		}
 
 		// Copy Phaser library file
-		fs.copyFileSync('phaser-ce/build/phaser.js', path.resolve(outputDir, 'phaser.js'));
+		fs.copyFileSync(__dirname + '/../phaser-ce/build/phaser.js', path.resolve(outputDir, 'phaser.js'));
 
 		// Write the final index.html. We report this after copying assets, even though we actually prepared it before,
 		// because it feels more natural to have the last reported output file be the file that actually runs our game.

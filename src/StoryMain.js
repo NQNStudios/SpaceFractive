@@ -15,7 +15,7 @@ function checkAndCall(functionName) {
 }
 
 // Create a Phaser game object.
-var phaser = new Phaser.Game(args.width, args.height, Phaser.AUTO, '__phaser',
+phaser = new Phaser.Game(args.width, args.height, Phaser.AUTO, '__phaser',
 {
   preload: checkAndCall('__preload'),
   create: checkAndCall('__create'),
