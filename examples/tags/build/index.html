@@ -187,6 +187,7 @@
             margin-bottom: 36pt;
         }
     </style>
+    <script type="text/javascript" src="phaser.js"></script>
     <script>
         var exports = {};
         "use strict";
@@ -462,7 +463,6 @@
         var InlineExpansionVariable = "variable (a string which will replace the link)";
         var TagVariable = "!";
     </script>
-    <script type="text/javascript" src="phaser.js"></script>"
     <script>
         function __Restart() {
             location.reload();
@@ -578,12 +578,14 @@
 </body>
 
 </html>
-<script>
-    var phaser = new Phaser.Game(480, 800, Phaser.AUTO, '__phaser', {
-        preload: __preload,
-        create: __create,
-        update: __update,
-        render: __render
-    }, false, true);
-    Core.GotoSection("Start");
+<script type="text/javascript">
+    window.onload = function() {
+        var phaser = new Phaser.Game(480, 800, Phaser.AUTO, '__phaser', {
+            preload: __preload,
+            create: __create,
+            update: __update,
+            render: __render
+        }, false, true);
+        Core.GotoSection("Start");
+    };
 </script>

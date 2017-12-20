@@ -159,7 +159,11 @@ export namespace Compiler
 		let template : string = fs.readFileSync(templatePath, "utf8");
 
 		// Imported scripts
-		let scriptSection : string = "<script>";
+		let scriptSection : string = '';
+		 // Insert Phaser
+		scriptSection += `<script type="text/javascript" src="phaser.js"></script>`;
+		// Insert all story scripts
+		scriptSection += "<script>";
 		scriptSection += "var exports = {};";	// This object holds all the TypeScript exports which are callable by story scripts
 
 		// Prettify the JavaScript if configured to do so
@@ -168,8 +172,6 @@ export namespace Compiler
 		// Insert all bundled scripts, including Core.js
 		scriptSection += `${javascript}`;
 		scriptSection += "</script>";
-		// Insert Phaser
-		scriptSection += `<script type="text/javascript" src="phaser.js"></script>"`;
 
 		template = InsertHtmlAtMark(scriptSection, template, 'script');
 
@@ -184,13 +186,16 @@ export namespace Compiler
 		}
 
 		// Insert the story's "main method".
-		template += "<script>";
+		template += '<script type="text/javascript">';
+		template += "window.onload = function() {";
+
 		// Initialize the Phaser game
 		let args = project.phaserArguments;
 		// TODO validate that user's scripts define __preload, etc., maybe at runtime.
 		template += `var phaser = new Phaser.Game(${args.width}, ${args.height}, Phaser.AUTO, '__phaser', { preload: __preload, create: __create, update: __update, render: __render }, ${args.transparent}, ${args.antialias});`;
 		// Auto-start at the story section called "Start"
 		template += "Core.GotoSection(\"Start\");";
+		template += "};";
 		template += "</script>";
 
 		if(project.outputFormat === 'minify')
