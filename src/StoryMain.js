@@ -4,12 +4,14 @@
 // this code is invoked.
 
 // Helper creates a function that wraps another function in a null-check
+var undefinedFunctions = [];
 function checkAndCall(functionName) {
   return function() {
     if (window[functionName] !== undefined) {
       window[functionName]();
-    } else {
+    } else if (undefinedFunctions.indexOf(functionName) == -1) {
       console.log("Function " + functionName + " is not defined. Skipping it.");
+      undefinedFunctions.push(functionName);
     }
   };
 }

@@ -641,18 +641,21 @@ and something different if they don't.";
         // this code is invoked.
 
         // Helper creates a function that wraps another function in a null-check
+        var undefinedFunctions = [];
+
         function checkAndCall(functionName) {
             return function() {
                 if (window[functionName] !== undefined) {
                     window[functionName]();
-                } else {
+                } else if (undefinedFunctions.indexOf(functionName) == -1) {
                     console.log("Function " + functionName + " is not defined. Skipping it.");
+                    undefinedFunctions.push(functionName);
                 }
             };
         }
 
         // Create a Phaser game object.
-        var phaser = new Phaser.Game(args.width, args.height, Phaser.AUTO, '__phaser', {
+        phaser = new Phaser.Game(args.width, args.height, Phaser.AUTO, '__phaser', {
             preload: checkAndCall('__preload'),
             create: checkAndCall('__create'),
             update: checkAndCall('__update'),
