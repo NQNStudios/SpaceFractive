@@ -189,12 +189,13 @@ export namespace Compiler
 		template += '<script type="text/javascript">';
 		template += "window.onload = function() {";
 
-		// Initialize the Phaser game
+		// Pass compiler arguments to StoryMain.js
 		let args = project.phaserArguments;
-		// TODO validate that user's scripts define __preload, etc., maybe at runtime.
-		template += `var phaser = new Phaser.Game(${args.width}, ${args.height}, Phaser.AUTO, '__phaser', { preload: __preload, create: __create, update: __update, render: __render }, ${args.transparent}, ${args.antialias});`;
-		// Auto-start at the story section called "Start"
-		template += "Core.GotoSection(\"Start\");";
+		template += `var args = ` + JSON.stringify(args) + ";";
+
+		// Inject StoryMain.js
+		template += fs.readFileSync('src/StoryMain.js');
+
 		template += "};";
 		template += "</script>";
 
