@@ -180,6 +180,9 @@ export namespace Compiler
 			template = InsertHtmlAtMark(backButtonHtml, template, 'backButton');
 		}
 
+	// Insert the story title from project metadata
+		template = InsertHtmlAtMark(project.title, template, 'title', false); // !required
+
 		// Insert the story's "main method".
 		template += '<script type="text/javascript">';
 		template += "window.onload = function() {";
