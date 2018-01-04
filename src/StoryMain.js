@@ -26,4 +26,4 @@ phaser = new Phaser.Game(args.width, args.height, Phaser.AUTO, '__phaser',
 }, args.transparent, args.antialias);
 
 // Auto-start at the story section called "Start"
-Core.GotoSection("Start");
+Core.BeginStory();

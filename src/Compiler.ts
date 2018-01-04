@@ -31,12 +31,9 @@ import * as util from "util";
 
 // Set up the Markdown parser and renderer
 import * as commonmark from "commonmark";
-const markdownReader = new commonmark.Parser({smart: false});
-const markdownWriter = new commonmark.HtmlRenderer({softbreak: "<br/>"});
 
-// Beautification
+// Source formatting
 import * as beautifier from "js-beautify";
-// Minification
 import * as minifier from "html-minifier";
 
 // Project file validation and overlay support
@@ -82,7 +79,9 @@ export let ProjectDefaults : FractiveProject = {
 		}
 	},
 	includeBackButton: true,
-	backButtonHtml: "Back"
+	backButtonHtml: "Back",
+	hardLineBreaks: true,
+	smartPunctuation: true
 };
 import * as globby from "globby";
 
@@ -108,31 +107,12 @@ export interface CompilerOptions
 export namespace Compiler
 {
 	let project : FractiveProject = null;
+	let projectPath : string = "";
 	let nextInlineID : number = 0;
 	let sectionCount : number = 0;
-
-	/**
-	 * Inserts the given html snippet into the template HTML at EVERY point where
-	 * a specially formatted comment appears.
-	 * @param snippet The html to insert
-	 * @param template The template in which to insert
-	 * @return The complete resulting html file contents
-	 */
-	function InsertHtmlAtMark(snippet : string, template : string, mark : string) : string
-	{
-		// The mark has to be placed inside an HTML comment formatted like so:
-		let markComment : string = `<!--{${mark}}-->`;
-
-		// Throw an error if the mark doesn't exist
-		if (template.indexOf(markComment) === -1)
-		{
-			console.log(`Template file must contain mark: ${markComment}`);
-			process.exit(1);
-		}
-
-		// Insert the snippet
-		return template.split(markComment).join(snippet);
-	}
+	let sections = {};
+	let markdownReader = null;
+	let markdownWriter = null;
 
 	/**
 	 * Inserts the given story text (html) and scripts (javascript) into an html template, and returns the complete resulting html file contents
@@ -142,8 +122,21 @@ export namespace Compiler
 	 */
 	function ApplyTemplate(basePath : string, html : string, javascript : string) : string
 	{
+		let templatePath : string = "";
+
+		if(project.template.indexOf("{examples}") == 0)
+		{
+			// If project.template begins with the macro '{examples}/', resolve relative
+			// to the templates folder of the Fractive installation, not the build path
+			templatePath = project.template.replace("{examples}", `${__dirname}/../templates`);
+		}
+		else
+		{
+			// Otherwise, the path is relative to the story's root directory
+			templatePath = path.resolve(basePath, project.template);
+		}
+
 		// Ensure that the template file exists
-		let templatePath : string = path.resolve(basePath, project.template);
 		if(!fs.existsSync(templatePath))
 		{
 			console.log(`Template file not found: "${templatePath}"`);
@@ -172,13 +165,12 @@ export namespace Compiler
 		// Insert all bundled scripts, including Core.js
 		scriptSection += `${javascript}`;
 		scriptSection += "</script>";
-
 		template = InsertHtmlAtMark(scriptSection, template, 'script');
 
 		// Insert html-formatted story text
 		template = InsertHtmlAtMark(html, template, 'story');
 
-		// Insert the back button if specified to do so
+		// Insert the back button everywhere the template defines <!--{backButton}-->
 		if(project.includeBackButton)
 		{
 			let backButtonHtml = '<a href="javascript:Core.GotoPreviousSection();">' + project.backButtonHtml + '</a>';
@@ -202,7 +194,9 @@ export namespace Compiler
 		if(project.outputFormat === 'minify')
 		{
 			return minifier.minify(template, {
+				caseSensitive: true,
 				collapseWhitespace: true,
+				log: OnMinifierLog,
 				minifyCSS: true,
 				minifyJS: true,
 				removeAttributeQuotes: true,
@@ -251,7 +245,7 @@ export namespace Compiler
 	 */
 	export function Compile(buildPath : string, options : CompilerOptions) : void
 	{
-		let basePath = path.dirname(buildPath);
+		projectPath = path.dirname(buildPath);
 
 		// Load the target project file and overlay it onto the ProjectDefaults. This allows user-made project
 		// files to only specify those properties which they want to override.
@@ -283,13 +277,24 @@ export namespace Compiler
 		if(options.dryRun) { console.log(clc.red("\n(This is a dry run. No output files will be written.)\n")); }
 
 		// Create or clean output directory
-		let cleanDir = path.resolve(basePath, project.output);
-		if(!fs.existsSync(cleanDir)) { fs.mkdirSync(cleanDir); }
+		let cleanDir = path.resolve(projectPath, project.output);
+		if(!fs.existsSync(cleanDir)) { CreateDirectoryRecursive(cleanDir); }
 		else { CleanDirectoryRecursive(cleanDir, options); }
+
+		// Clear section info from any previous compilation
+		sections = {};
+
+		// Setup the Markdown parser and renderer
+		markdownReader = new commonmark.Parser({
+			smart: project.smartPunctuation
+		});
+		markdownWriter = new commonmark.HtmlRenderer({
+			softbreak: (project.hardLineBreaks ? "<br/>" : "\n")
+		});
 
 		// Gather all our target files to build
 		let globOptions = {
-			cwd: basePath,
+			cwd: projectPath,
 			expandDirectories: true,
 			ignore: project.ignore.concat(`${project.output}/**`),
 			matchBase: true,
@@ -308,7 +313,7 @@ export namespace Compiler
 		for(let i = 0; i < targets.markdownFiles.length; i++)
 		{
 			if(options.verbose || options.dryRun) { LogAction(targets.markdownFiles[i], "render"); }
-			var rendered = RenderFile(path.resolve(basePath, targets.markdownFiles[i]), options);
+			var rendered = RenderFile(path.resolve(projectPath, targets.markdownFiles[i]), options);
 			if(rendered === null) { errorCount++; }
 			else { html += `<!-- ${targets.markdownFiles[i]} -->\n${rendered}\n`; }
 		}
@@ -319,15 +324,15 @@ export namespace Compiler
 		for(let i = 0; i < targets.javascriptFiles.length; i++)
 		{
 			if(options.verbose || options.dryRun) { LogAction(targets.javascriptFiles[i], "import"); }
-			javascript += `// ${targets.javascriptFiles[i]}\n${ImportFile(path.resolve(basePath, targets.javascriptFiles[i]))}\n`;
+			javascript += `// ${targets.javascriptFiles[i]}\n${ImportFile(path.resolve(projectPath, targets.javascriptFiles[i]))}\n`;
 		}
 
 		// Wrap our compiled html with a page template
-		html = ApplyTemplate(basePath, html, javascript);
+		html = ApplyTemplate(projectPath, html, javascript);
 
 		// Create output directory
-		let outputDir = path.resolve(basePath, project.output);
-		if(!fs.existsSync(outputDir)) { fs.mkdirSync(outputDir); }
+		let outputDir = path.resolve(projectPath, project.output);
+		if(!fs.existsSync(outputDir)) { CreateDirectoryRecursive(outputDir); }
 
 		// Copy all our assets
 		for(let i = 0; i < targets.assetFiles.length; i++)
@@ -335,10 +340,10 @@ export namespace Compiler
 			if(options.verbose || options.dryRun) { LogAction(targets.assetFiles[i], "copy"); }
 			if(!options.dryRun)
 			{
-				let sourcePath = path.resolve(basePath, targets.assetFiles[i]);
+				let sourcePath = path.resolve(projectPath, targets.assetFiles[i]);
 				let destPath = path.resolve(outputDir, targets.assetFiles[i]);
 				let destDir = path.dirname(destPath);
-				if(!fs.existsSync(destDir)) { fs.mkdirSync(destDir); }
+				if(!fs.existsSync(destDir)) { CreateDirectoryRecursive(destDir); }
 				fs.copyFileSync(sourcePath, destPath);
 			}
 		}
@@ -349,8 +354,27 @@ export namespace Compiler
 		// Write the final index.html. We report this after copying assets, even though we actually prepared it before,
 		// because it feels more natural to have the last reported output file be the file that actually runs our game.
 		let indexPath : string = path.resolve(outputDir, "index.html");
-		if(options.verbose || options.dryRun) { LogAction(indexPath.split(path.resolve(basePath)).join(""), "output"); }
+		if(options.verbose || options.dryRun) { LogAction(indexPath.split(path.resolve(projectPath)).join(""), "output"); }
 		if(!options.dryRun) { fs.writeFileSync(indexPath, html, "utf8"); }
+	}
+
+	/**
+	 * Creates the target directory and all necessary parent directories. Equivalent to *nix 'mkdir -p'.
+	 * @param targetPath The path of the target directory to create
+	 */
+	function CreateDirectoryRecursive(targetPath : string)
+	{
+		const separator = path.sep;
+		const initDir = (path.isAbsolute(targetPath) ? separator : "");
+		targetPath.split(separator).reduce(
+			(parentDir, childDir) =>
+			{
+				const currentPath = path.resolve(parentDir, childDir);
+				if(!fs.existsSync(currentPath)) { fs.mkdirSync(currentPath); }
+				return currentPath;
+			},
+			initDir
+		);
 	}
 
 	/**
@@ -398,6 +422,31 @@ export namespace Compiler
 			process.exit(1);
 		}
 		return fs.readFileSync(filepath, "utf8");
+	}
+
+		/**
+	 * Inserts the given html snippet into the template HTML at EVERY point where
+	 * a specially formatted comment appears: <!--{mark}-->
+	 * @param snippet The html to insert
+	 * @param template The template in which to insert
+	 * @param mark The mark at which to insert Html
+	 * @param required Whether the mark is required or not. Default: true
+	 * @return The complete resulting html file contents
+	 */
+	function InsertHtmlAtMark(snippet : string, template : string, mark : string, required : boolean = true) : string
+	{
+		// The mark has to be placed inside an HTML comment formatted like so:
+		let markComment : string = `<!--{${mark}}-->`;
+
+		// Throw an error if the mark doesn't exist
+		if (template.indexOf(markComment) === -1 && required)
+		{
+			LogError(`Template file does not contain mark ${markComment}`);
+			process.exit(1);
+		}
+
+		// Insert the snippet
+		return template.split(markComment).join(snippet);
 	}
 
 	/**
@@ -455,6 +504,35 @@ export namespace Compiler
 	}
 
 	/**
+	* Check if a URL is considered external and its link should be marked with the external link mark defined in snap.json
+	* @param url The URL string to check
+	*/
+	function IsExternalLink(url : string)
+	{
+		let tokens : Array<string> = url.split("/");
+		switch(tokens[0].toLowerCase())
+		{
+			case "http:":
+			case "https:":
+			case "mailto:":
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Logs a consistently formatted file action to stdout
+	 * @param filePath The path of the file an action was performed on
+	 * @param action The action that was performed
+	 */
+	function LogAction(filePath : string, action: string)
+	{
+		console.log(`  ${clc.green(action)} ${path.relative(projectPath, filePath)}`);
+	}
+
+	/**
 	 * Dumps the given AST to the console in a tree-like format.
 	 * This doesn't render the AST; it's just a debug visualization of its current structure.
 	 * @param ast The AST to display
@@ -485,16 +563,6 @@ export namespace Compiler
 	}
 
 	/**
-	 * Logs a consistently formatted file action to stdout
-	 * @param filePath The path of the file an action was performed on
-	 * @param action The action that was performed
-	 */
-	function LogAction(filePath : string, action: string)
-	{
-		console.log(`  ${clc.green(action)} ${filePath}`);
-	}
-
-	/**
 	 * Logs a consistently formatted error message to stderr
 	 * @param text The text to display
 	 */
@@ -515,11 +583,48 @@ export namespace Compiler
 		{
 			let line : number = node.sourcepos[0][0] + (lineOffset !== undefined ? lineOffset : 0);
 			let column : number = node.sourcepos[0][1] + (columnOffset !== undefined ? columnOffset : 0);
-			LogError(`${filePath} (${line},${column}): ${text}`);
+			LogError(`${path.relative(projectPath, filePath)} (${line},${column}): ${text}`);
 		}
 		else
 		{
-			LogError(`${filePath}: ${text}`);
+			LogError(`${path.relative(projectPath, filePath)}: ${text}`);
+		}
+	}
+
+	/**
+	 * Callback for html_minifier log events
+	 * @param data The log data (message, object, whatever) returned by the minifier
+	 */
+	function OnMinifierLog(data)
+	{
+		switch(typeof(data))
+		{
+			case "string":
+			{
+				if(data.indexOf("minified in:") < 0) { console.log(clc.yellow("Minifier: " + data)); }
+				break;
+			}
+			case "object":
+			{
+				if(data.message)
+				{
+					// UglifyJS log message (probably)
+					// TODO: Make this suck so much less => https://github.com/invicticide/fractive/issues/69
+					console.log(clc.yellow(`Minifier: ${data.message}\nThis isn't fatal; it just means Javascript was not minified.\nTry running CLI uglifyjs on the .js file(s) to narrow down the error.`));
+				}
+				else
+				{
+					console.log(clc.yellow(`"Minifier: Unrecognized object format in log... raw object follows:`));
+					console.log(data);
+				}
+				break;
+			}
+			default:
+			{
+				console.log(clc.yellow(`"Minifier: Unhandled data type '${typeof(data)}' in log... raw data follows:`));
+				console.log(data);
+				break;
+			}
 		}
 	}
 
@@ -697,25 +802,6 @@ export namespace Compiler
 	}
 
 	/**
-	* Check if a URL is considered external and its link should be marked with the external link mark defined in snap.json
-	* @param url The URL string to check
-	*/
-	function IsExternalLink(url : string)
-	{
-		let tokens : Array<string> = url.split("/");
-		switch(tokens[0].toLowerCase())
-		{
-			case "http:":
-			case "https:":
-			case "mailto:":
-			{
-				return true;
-			}
-		}
-		return false;
-	}
-
-	/**
 	 * Rewrite a link node with data-attributes that indicate the link type and macro destination
 	 * @param walker The current AST iterator state
 	 * @param event The AST event to process (this should be a link node)
@@ -775,7 +861,7 @@ export namespace Compiler
 
 		if(url[url.length - 1] !== "}")
 		{
-			LogParseError("Unterminated macro in link destination", filepath, event.node);
+			LogParseError(`Unterminated macro in link destination ${url}`, filepath, event.node);
 			return false;
 		}
 
@@ -811,10 +897,7 @@ export namespace Compiler
 						{ attr: "href", value: "javascript:;" },
 						{ attr: "data-replace-with", value: url }
 					];
-
-					// Prepending _ to the id makes this :inline macro disabled by default. It gets enabled when it's moved
-					// into the __currentSection div.
-					return RewriteLinkNode(event.node, attrs, `_inline-${nextInlineID++}`);
+					return RewriteLinkNode(event.node, attrs, `inline-${nextInlineID++}`);
 				}
 			}
 			default:
@@ -842,7 +925,7 @@ export namespace Compiler
 						else
 						{
 							let attrs = [
-								{ attr: "href", value: "#" },
+								{ attr: "href", value: "javascript:;" },
 								{ attr: "data-goto-section", value: url.substring(1) }
 							];
 							return RewriteLinkNode(event.node, attrs, null);
@@ -869,7 +952,7 @@ export namespace Compiler
 						else
 						{
 							let attrs = [
-								{ attr: "href", value: "#" },
+								{ attr: "href", value: "javascript:;" },
 								{ attr: "data-call-function", value: url.substring(1) }
 							];
 							return RewriteLinkNode(event.node, attrs, null);
@@ -877,12 +960,12 @@ export namespace Compiler
 					}
 					case "$": // Variable link: behavior undefined
 					{
-						LogParseError("Variable macros can't be used as link destinations", filepath, event.node);
+						LogParseError(`Variable macros can't be used as link destinations: {${url}}`, filepath, event.node);
 						return false;
 					}
 					default: // Unknown macro
 					{
-						LogParseError("Unrecognized macro in link destination", filepath, event.node);
+						LogParseError(`Unrecognized macro in link destination: {${url}}`, filepath, event.node);
 						return false;
 					}
 				}
@@ -917,6 +1000,7 @@ export namespace Compiler
 			}
 			else if(node.literal[i] === '{')
 			{
+				let insertedNode = null;
 				let macro : string = null;
 				let braceCount : number = 1;
 				for(let j = i + 1; j < node.literal.length; j++)
@@ -939,7 +1023,6 @@ export namespace Compiler
 					LogParseError(`Unterminated macro near "${node.literal.substring(i, i + 10)}" in text`, filepath, node, lineOffset, columnOffset);
 					return false;
 				}
-				var insertedNode;
 				switch(macro[1])
 				{
 					case "{":
@@ -947,8 +1030,46 @@ export namespace Compiler
 						// Begin a new section
 						if(node.parent)
 						{
-							var insertedNode = new commonmark.Node("html_inline", node.sourcepos); // TODO: Real sourcepos
-							insertedNode.literal = `${sectionCount > 0 ? "</div>\n" : ""}<div id="${macro.substring(2, macro.length - 2)}" class="section" hidden="true">`;
+							// Sections are declared {{SectionName: tag, tag2, ...}}
+							// All whitespace will be trimmed, so
+							// {{ SectionName : tag,tag2,  tag3 }} is also valid.
+							let macroContents : string = macro.substring(2, macro.length - 2);
+
+							let sectionName : string = macroContents;
+							let tags : Array<string> = [];
+
+							// If the macro contains ':' then part of it is tag declarations
+							if(macroContents.indexOf(":") !== -1)
+							{
+								// Only take the part preceding ':' as the section name
+								sectionName = macroContents.substring(0, macroContents.indexOf(":")).trim();
+
+								// Tokenize the tag declarations and strip whitespace
+								let tagDeclarations : string = macroContents.substring(macroContents.indexOf(":") + 1);
+								let tagTokens = tagDeclarations.split(',');
+								for (var j = 0; j < tagTokens.length; ++j)
+								{
+									tags.push(tagTokens[j].trim());
+								}
+							}
+
+							// Check for duplicate section names
+							if(sections[sectionName] !== undefined)
+							{
+								LogParseError(`Section "${sectionName}" was already defined in "${sections[sectionName].sourceFile}" on line "${sections[sectionName].lineNumber}"`, filepath, node, lineOffset, columnOffset);
+								return false;
+							}
+							else
+							{
+								sections[sectionName] = {
+									sourceFile : path.relative(projectPath, filepath),
+									lineNumber : lineOffset
+								};
+							}
+
+							// Build the section source div
+							insertedNode = new commonmark.Node("html_inline", node.sourcepos); // TODO: Real sourcepos
+							insertedNode.literal = `${sectionCount > 0 ? "</div>\n" : ""}<div id="${sectionName}" data-tags="${tags.toString()}" class="section" hidden="true">`;
 							if(node.prev)
 							{
 								LogParseError(`Section macro "${macro}" must be defined in its own paragraph/on its own line`, filepath, node, lineOffset, columnOffset);
@@ -956,8 +1077,44 @@ export namespace Compiler
 							}
 							else if(node.parent.type === "paragraph")
 							{
-								// This is the most common case for correctly-formatted section declarations
+								// Move the new div node after the containing paragraph so it gets parsed
 								node.parent.insertAfter(insertedNode);
+
+								// Anything else in the containing paragraph needs to get moved to a new paragraph after the new div node
+								// so it doesn't get silently swallowed
+								let newParagraph = new commonmark.Node("paragraph", node.sourcepos); // TODO: Real sourcepos
+								let nodesMoved : number = 0;
+								let bSkippedFirstBreak : boolean = false;
+								while((event = walker.next()))
+								{
+									if(event.node.type === "paragraph" && !event.entering) { break; }
+
+									// A common user pattern is a section declaration with the first line of the section text following
+									// a softbreak instead of a paragraph break. We need to swallow that softbreak (and only that one);
+									// otherwise we'll get unexpected whitespace at the top of the section text in the final render.
+									if(event.node.type === "softbreak" && !bSkippedFirstBreak)
+									{
+										bSkippedFirstBreak = true;
+										continue;
+									}
+
+									newParagraph.appendChild(event.node);
+									++nodesMoved;
+								}
+
+								// If there's additional text on the same line as the section declaration, make sure we pick it up too!
+								let remainderNode = new commonmark.Node("text", node.sourcepos); // TODO: Real sourcepos
+								remainderNode.literal = StripLeadingWhitespace(node.literal.substring(macro.length));
+								newParagraph.prependChild(remainderNode);
+
+								// Only append the new paragraph if we actually put something in it; otherwise we'll get an empty
+								// paragraph which will just introduce mysterious whitespace in the final render
+								if(nodesMoved > 0 || remainderNode.literal.length > 0)
+								{
+									insertedNode.insertAfter(newParagraph);
+								}
+
+								// Unlink the old containing paragraph, which should now be empty
 								node.parent.unlink();
 							}
 							else
@@ -965,6 +1122,7 @@ export namespace Compiler
 								LogParseError(`Section macro "${macro}" cannot be defined inside another block element`, filepath, node, lineOffset, columnOffset);
 								return false;
 							}
+
 							sectionCount++;
 						}
 						else
@@ -1125,12 +1283,15 @@ export namespace Compiler
 	 * skipping past escaped Fractive macros, but can also skip regular escape sequences as well.
 	 * @param s The string to scan
 	 * @param startIndex The index of the \ character which begins the escape sequence to be skipped
-	 * @returns The index of the last character of the escape sequence, or -1 on error (e.g. an unterminated Fractive macro). If the starting character isn't a \ then this just returns startIndex.
+	 * @returns The index of the last character of the escape sequence, or -1 on error. If the starting character isn't a \ then this just returns startIndex.
 	 */
 	function SkipEscapedSubstring(s : string, startIndex : number)
 	{
 		// This isn't an escape at all
 		if(s[startIndex] !== '\\') { return startIndex; }
+
+		// This is an escaped \ so collapsed the \\ down to a single \
+		if(s[startIndex + 1] === '\\') { return startIndex; }
 
 		// This is a regular escape sequence, so just skip the escaped character
 		if(s[startIndex + 1] !== '{') { return startIndex + 1; }
@@ -1143,6 +1304,24 @@ export namespace Compiler
 			else if(s[i] === '}' && --braceCount === 0) { return i; }
 		}
 
-		return -1;
+		// The escaped macro was not terminated, so we're probably just escaping a single brace
+		return startIndex + 1;
+	}
+
+	/**
+	 * Returns the given string with all leading whitespace stripped
+	 * @param s The string to strip
+	 * @returns The given string with all leading whitespace stripped. If the given string contains only whitespace, an empty string is returned.
+	 */
+	function StripLeadingWhitespace(s : string) : string
+	{
+		for(let i = 0; i < s.length; i++)
+		{
+			if(s[i] !== " " && s[i] !== "\t" && s[i] !== "\n")
+			{
+				return s.substring(i);
+			}
+		}
+		return "";
 	}
 }
