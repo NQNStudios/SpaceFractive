@@ -20,10 +20,11 @@ function checkAndCall(functionName) {
 phaser = new Phaser.Game(args.width, args.height, Phaser.AUTO, '__phaser',
 {
   preload: checkAndCall('__preload'),
-  create: checkAndCall('__create'),
+  create: function() {
+    checkAndCall('__create');
+    // Start the story after the Phaser game is fully prepared
+    Core.BeginStory();
+  },
   update: checkAndCall('__update'),
   render: checkAndCall('__render')
 }, args.transparent, args.antialias);
-
-// Auto-start at the story section called "Start"
-Core.BeginStory();
