@@ -25,6 +25,14 @@ Fractive is now globally available on the command line. Type:
 
 ...to launch the user guide and start learning how to use Fractive!
 
+## Installing SpaceFractive
+
+```
+git submodule update --init # Clone Phaser
+npm install -g typescript
+npm install -g .
+```
+
 ## Contributing
 
 Please be sure to read the [contribution guidelines](https://github.com/invicticide/fractive/blob/dev/.github/contributing.md), the [style guide](https://github.com/invicticide/fractive/blob/dev/.github/code_style.md), and the [code of conduct](https://github.com/invicticide/fractive/blob/dev/.github/code_of_conduct.md) before submitting any pull requests. Also, check the [roadmap](https://github.com/invicticide/fractive/blob/dev/.github/roadmap.md) to see what's currently planned.
