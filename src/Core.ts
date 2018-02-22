@@ -254,7 +254,9 @@ export namespace Core
 		{
 			case '@':
 			{
-				// Don't try to expand special relative section macros @^up or @^down
+				// special relative section macros {@^up} or {@^down}
+				// should have already been rewritten by the Compiler to refer to the
+				// relative section's real name
 				if (macro[1] === '^') return macro;
 
 				let sectionName = macro.substring(1);

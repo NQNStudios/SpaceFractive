@@ -651,6 +651,9 @@ export namespace Compiler
 		// Read the Markdown source and apply alias replacements
 		let markdown = ReplaceAliases(fs.readFileSync(filepath, "utf8"));
 
+		// TODO Compiler should replace relative section macros {@^up} and {@^down} with
+		// section macros referring to the up/down section by name
+
 		// Parse the Markdown source into an Abstract Syntax Tree
 		let ast = markdownReader.parse(markdown);
 		if(options.debug)
