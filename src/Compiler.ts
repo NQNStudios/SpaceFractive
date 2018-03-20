@@ -180,7 +180,7 @@ export namespace Compiler
 			template = InsertHtmlAtMark(backButtonHtml, template, 'backButton');
 		}
 
-	// Insert the story title from project metadata
+        // Insert the story title from project metadata
 		template = InsertHtmlAtMark(project.title, template, 'title', false); // !required
 
 		// Insert the story's "main method".
@@ -299,6 +299,9 @@ export namespace Compiler
 		});
 
 		// Gather all our target files to build
+
+        // Gather all the script files.
+        let javascriptFiles = [];
 		let globOptions = {
 			cwd: projectPath,
 			expandDirectories: true,
@@ -307,6 +310,19 @@ export namespace Compiler
 			nodir: true,
 			nomount: true
 		};
+
+        // Transpile all scripts that aren't written in pure JS.
+        let scriptPatterns = project.scripts;
+        for (let i = 0; i < scriptPatterns.length; i++) {
+            let scriptFiles = globby.sync([scriptPatterns[i].filePattern], globOptions);
+            if ('transpiler' in scriptPatterns) {
+                let transpiler = scriptPatterns[i].transpiler;
+
+            }
+
+            javascriptFiles = javascriptFiles.concat(scriptFiles);
+        }
+
 		let targets = {
 			markdownFiles: globby.sync(project.markdown, globOptions),
 			javascriptFiles: globby.sync(project.javascript, globOptions),

@@ -14,9 +14,16 @@
 			"uniqueItems": true,
 			"description": "List of glob-style patterns for locating Markdown source files. These are compiled in the order in which they appear."
 		},
-		"javascript": {
+		"scripts": {
 			"type": "array",
-			"items": { "type": "string" },
+            "uniqueItems": true,
+			"items": {
+                "type": "object",
+                "properties": {
+                    "filePattern": { "type": "string" },
+                    "transpiler": { "type": "string", "required": false }
+                }
+            },
 			"uniqueItems": true,
 			"description": "List of glob-style patterns for locating Javascript files reside. These are imported in the order in which they appear."
 		},
