@@ -29,6 +29,7 @@ Fractive is now globally available on the command line. Type:
 
 ```
 git submodule update --init # Clone Phaser
+npm install
 npm install -g typescript
 npm install -g .
 ```

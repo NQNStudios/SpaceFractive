@@ -3,6 +3,10 @@
 <head>
     <title>Linear Story Example</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta property="og:title" content="Linear Story Example" />
+    <meta property="og:description" content="An interactive story written in Fractive" />
+    <meta name="twitter:card" content="summary" />
+
     <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet"></link>
     <style>
         #__controls {
@@ -712,27 +716,19 @@
             <p>These aliases will let us rewrite our Markdown one last time, even cleaner<br/>and with the added benefit of a back button wherever it’s needed:</p>
             <pre><code>{{Section1}}
 ...
-\[Forward](</code></pre>
-            <pre><code><span data-expand-macro="@^down"></span></code></pre>
-            <pre><code>)
+{down}
 
 {{Section2}}
 ...
-{up} \[Forward](</code></pre>
-            <pre><code><span data-expand-macro="@^down"></span></code></pre>
-            <pre><code>)
+{up} {down}
 
 {{Section2.5}}
 ...
-{up} \[Forward](</code></pre>
-            <pre><code><span data-expand-macro="@^down"></span></code></pre>
-            <pre><code>)
+{up} {down}
 
 {{Section3}}
 ...
-{up} \[Forward](</code></pre>
-            <pre><code><span data-expand-macro="@^down"></span></code></pre>
-            <pre><code>)
+{up} {down}
 </code></pre>
             <p><a title="{@%5Edown}" href="javascript:;" data-goto-relative-section="down">Forward</a></p>
         </div>
