@@ -1,7 +1,7 @@
 {
-  "name": "fractive",
+  "name": "space-fractive",
   "version": "1.3.2",
-  "description": "Fractive is a hypertext authoring tool, primarily intended for the creation of interactive fiction.",
+  "description": "SpaceFractive is a fork of Fractive for making multimedia interactive fiction.",
   "keywords": [
     "game development",
     "gamedev",
@@ -10,17 +10,17 @@
     "hypertext"
   ],
   "license": "AGPL-3.0+",
-  "author": "Josh Sutphin <josh@kickbomb.us> (http://kickbomb.us)",
-  "homepage": "https://github.com/invicticide/fractive#readme",
+  "author": "Nat Quayle Nelson <natquaylenelson@gmail.com>, Josh Sutphin <josh@kickbomb.us> (http://kickbomb.us)",
+  "homepage": "https://github.com/NQNStudios/SpaceFractive/blob/phaser/README.md",
   "repository": {
     "type": "git",
-    "url": "https://github.com/invicticide/fractive.git"
+    "url": "https://github.com/NQNStudios/SpaceFractive.git"
   },
   "bugs": {
     "url": "https://github.com/invicticide/fractive/issues"
   },
   "bin": {
-    "fractive": "./lib/CLI.js"
+    "space-fractive": "./lib/CLI.js"
   },
   "main": "lib/Main.js",
   "types": "lib/Main.d.ts",
