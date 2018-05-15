@@ -25,6 +25,26 @@ Aliases are {TestAdjective}!
 
 Aliases can enable {red}clean inline styling{/red}!
 
+Testing alias with empty replaceWith/end (issue #79):
+
+- Empty replaceWith: "{issue79_emptyReplaceWith}" (should be "")
+- Empty end: "{issue79_emptyEnd}content{/issue79_emptyEnd}" (should be "(open)content")
+- Empty both: "{issue79_emptyBoth}content{/issue79_emptyBoth}" (should be "content")
+
+Referring to the same alias multiple times (issue #77):
+
+- First instance: {TestAdjective}
+- Second instance: {TestAdjective}
+- Escaped instance: \\{TestAdjective}
+- Final instance: {TestAdjective}
+
+Referring to the same regex-based alias multiple times (issue #77, alternate):
+
+- First instance: {regex:test}
+- Second instance: {regex:test}
+- Escaped instance: \\{regex:test}
+- Final instance: {regex:test}
+
 # Links
 
 [Link to a section]({@TestSection})

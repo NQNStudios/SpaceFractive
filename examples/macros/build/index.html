@@ -3,6 +3,10 @@
 <head>
     <title>Macros Example</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta property="og:title" content="Macros Example" />
+    <meta property="og:description" content="An interactive story written in Fractive" />
+    <meta name="twitter:card" content="summary" />
+
     <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet"></link>
     <style>
         #__controls {
@@ -686,6 +690,26 @@
             <h1>Aliases</h1>
             <p>Aliases are awesome!</p>
             <p>Aliases can enable <span style='color:#ff8888'>clean inline styling</span>!</p>
+            <p>Testing alias with empty replaceWith/end (issue #79):</p>
+            <ul>
+                <li>Empty replaceWith: “” (should be “”)</li>
+                <li>Empty end: “(open)content” (should be “(open)content”)</li>
+                <li>Empty both: “content” (should be “content”)</li>
+            </ul>
+            <p>Referring to the same alias multiple times (issue #77):</p>
+            <ul>
+                <li>First instance: awesome</li>
+                <li>Second instance: awesome</li>
+                <li>Escaped instance: {TestAdjective}</li>
+                <li>Final instance: awesome</li>
+            </ul>
+            <p>Referring to the same regex-based alias multiple times (issue #77, alternate):</p>
+            <ul>
+                <li>First instance: test</li>
+                <li>Second instance: test</li>
+                <li>Escaped instance: {regex:test}</li>
+                <li>Final instance: test</li>
+            </ul>
             <h1>Links</h1>
             <p><a title="{@TestSection}" href="javascript:;" data-goto-section="TestSection">Link to a section</a><br/><a title="{#LinkedFunction}" href="javascript:;" data-call-function="LinkedFunction">Link to a function</a></p>
             <p><a href="#">Link with a section in the label: <span data-expand-macro="@TestSection"></span></a><br/><a href="#">Link with a function in the label: <span data-expand-macro="#TestFunction"></span></a><br/><a href="#">Link with a variable in the label: <span data-expand-macro="$TestVariable"></span></a></p>

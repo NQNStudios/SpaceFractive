@@ -30,7 +30,7 @@ import * as path from "path";
 import * as util from "util";
 
 // XRegExp
-import * as XRegExp from "XRegExp";
+import * as XRegExp from "xregexp";
 
 // Set up the Markdown parser and renderer
 import * as commonmark from "commonmark";
@@ -47,7 +47,8 @@ export let ProjectDefaults : FractiveProject = {
 	title: "Untitled",
 	author: "Anonymous",
 	description: "An interactive story written in Fractive",
-	website: "fractive.io",
+	website: "",
+	twitter: "",
 	markdown: [ "source/**/*.md" ],
 	javascript: [ "source/**/*.js" ],
 	assets: [ "assets/**" ],
@@ -177,8 +178,19 @@ export namespace Compiler
 		if(project.includeBackButton)
 		{
 			let backButtonHtml = '<a href="javascript:Core.GotoPreviousSection();">' + project.backButtonHtml + '</a>';
-			template = InsertHtmlAtMark(backButtonHtml, template, 'backButton');
+			template = InsertHtmlAtMark(backButtonHtml, template, 'backButton', false); // !required
 		}
+
+		// Insert OpenGraph tags
+		let openGraphHtml = `<meta property="og:title" content="${project.title}"/>\n`;
+		openGraphHtml += `<meta property="og:description" content="${project.description}"/>\n`;
+		openGraphHtml += `<meta name="twitter:card" content="summary"/>\n`;
+		if(project.twitter.length > 0)
+		{
+			if(project.twitter[0] !== '@') { project.twitter = `@${project.twitter}`; }
+			openGraphHtml += `<meta name="twitter:creator" content="${project.twitter}"/>\n`;
+		}
+		template = InsertHtmlAtMark(openGraphHtml, template, 'opengraph', false); // !required
 
 	// Insert the story title from project metadata
 		template = InsertHtmlAtMark(project.title, template, 'title', false); // !required
@@ -212,7 +224,7 @@ export namespace Compiler
 				removeRedundantAttributes: true
 			});
 		}
-		else if (project.outputFormat === 'prettify')
+		else if(project.outputFormat === 'prettify')
 		{
 			return beautifier.html(template);
 		}
@@ -430,7 +442,7 @@ export namespace Compiler
 		return fs.readFileSync(filepath, "utf8");
 	}
 
-		/**
+	/**
 	 * Inserts the given html snippet into the template HTML at EVERY point where
 	 * a specially formatted comment appears: <!--{mark}-->
 	 * @param snippet The html to insert
@@ -445,7 +457,7 @@ export namespace Compiler
 		let markComment : string = `<!--{${mark}}-->`;
 
 		// Throw an error if the mark doesn't exist
-		if (template.indexOf(markComment) === -1 && required)
+		if(template.indexOf(markComment) === -1 && required)
 		{
 			LogError(`Template file does not contain mark ${markComment}`);
 			process.exit(1);
@@ -1067,7 +1079,7 @@ export namespace Compiler
 								// Tokenize the tag declarations and strip whitespace
 								let tagDeclarations : string = macroContents.substring(macroContents.indexOf(":") + 1);
 								let tagTokens = tagDeclarations.split(',');
-								for (var j = 0; j < tagTokens.length; ++j)
+								for(var j = 0; j < tagTokens.length; ++j)
 								{
 									tags.push(tagTokens[j].trim());
 								}
@@ -1226,34 +1238,35 @@ export namespace Compiler
 						{
 							let alias = project.aliases[k];
 
-							if (alias.hasOwnProperty('alias') && macroName === alias.alias)
+							if(alias.hasOwnProperty('alias') && macroName === alias.alias)
 							{
 								replacement = (bIsEnd ? alias.end : alias.replaceWith);
 								break;
 							}
-							else if (alias.hasOwnProperty('regex'))
+							else if(alias.hasOwnProperty('regex'))
 							{
 								regexp = XRegExp(alias.regex);
-                                if (alias.debug)
-                                {
-                                    console.log(`Checking macro ${macroName} against regex ${alias.regex}`);
-                                }
+								if(alias.debug)
+								{
+									console.log(`Checking macro ${macroName} against regex ${alias.regex}`);
+								}
 								regexpToReplace = XRegExp('{' + (bIsEnd ? '/' : '') + alias.regex + '}');
-
-								if (regexp.exec(macroName)) {
-                                    if (alias.debug)
-                                    {
-                                        console.log(`Replacing macro ${macroName} with ${regexpReplacement}`);
-                                    }
+								if(regexp.exec(macroName))
+								{
+									if(alias.debug)
+									{
+										console.log(`Replacing macro ${macroName} with ${regexpReplacement}`);
+									}
 									regexpReplacement = (bIsEnd ? alias.end : alias.replaceWith);
-                                    break;
+									replacement = XRegExp.replace(macro, regexpToReplace, regexpReplacement, 'one');
+									break;
 								}
 							}
 						}
-						if(replacement)
+						if(replacement !== null)
 						{
-							// Replace all occurrences of this macro and jump the scan index to the end of this instance
-							markdown = markdown.split(macro).join(replacement);
+							// Replace this macro instance and jump the scan index to the end of the replacement
+							markdown = `${markdown.substring(0, i)}${replacement}${markdown.substring(j + 1)}`;
 							i += replacement.length - 1;
 						}
 						else if (regexpReplacement)
