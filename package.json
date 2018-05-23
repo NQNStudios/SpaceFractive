@@ -20,10 +20,10 @@
     "url": "https://github.com/invicticide/fractive/issues"
   },
   "bin": {
-    "space-fractive": "./lib/CLI.js"
+    "space-fractive": "./space-lib/CLI.js"
   },
-  "main": "lib/Main.js",
-  "types": "lib/Main.d.ts",
+  "main": "space-lib/Main.js",
+  "types": "space-lib/Main.d.ts",
   "devDependencies": {
     "@types/node": "^8.0.28",
     "typescript": "^2.6.0"
