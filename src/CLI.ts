@@ -84,11 +84,11 @@ function Create(args : Array<string>)
 	{
 		console.log(``);
 		console.log(`Usage:`);
-		console.log(`${clc.green("node lib/CLI.js create")} ${clc.blue("<storyDirectory>")}`);
+		console.log(`${clc.green("space-fractive create")} ${clc.blue("<storyDirectory>")}`);
 		console.log(``);
 		console.log(`${clc.blue("storyDirectory:")} The folder path where the new story project should be created.`);
 		console.log(``);
-		console.log(`${clc.green("node lib/CLI.js create /Users/Desktop/MyStory")}`);
+		console.log(`${clc.green("space-fractive create /Users/Desktop/MyStory")}`);
 		console.log(``);
 		process.exit(1);
 	}
@@ -172,7 +172,7 @@ function ShowUsage()
 {
 	console.log(``);
 	console.log(`Usage:`);
-	console.log(`${clc.green("fractive")} ${clc.blue("<command>")} ${clc.yellow("[options]")}`);
+	console.log(`${clc.green("space-fractive")} ${clc.blue("<command>")} ${clc.yellow("[options]")}`);
 	console.log(``);
 	console.log(`${clc.blue("help")}        Launch the Fractive user guide`);
 	console.log(`${clc.blue("compile")}     Compile an existing Fractive project`);

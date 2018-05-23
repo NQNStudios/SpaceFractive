@@ -36,7 +36,7 @@ var isWindows = /^win/.test(process.platform);
 function BuildDocs()
 {
 	console.log("Building documentation...");
-	let cmd = `node lib/CLI.js compile doc ${process.argv.slice(2).join(" ")}`;
+	let cmd = `node space-lib/CLI.js compile doc ${process.argv.slice(2).join(" ")}`;
 	let result = cp.spawnSync(cmd, [], { env : process.env, shell : true });
 	if(result.stdout !== null)
 	{
@@ -123,7 +123,7 @@ function BuildExamples()
 		console.log(`  ${examples[i]} (${i + 1}/${examples.length})`);
 
     // Build the directory in a child process and retrieve the result
-		let cmd = `node lib/CLI.js compile ${examples[i]} ${process.argv.slice(2).join(" ")}`;
+		let cmd = `node space-lib/CLI.js compile ${examples[i]} ${process.argv.slice(2).join(" ")}`;
 		let result = cp.spawnSync(cmd, [], { env : process.env, shell : true });
     // Print any build output
 		if(result.stdout !== null)
@@ -156,8 +156,8 @@ jsonSchemaToTypescript.compileFromFile(schemaInput).then(ts =>
 {
 	fs.writeFileSync(schemaOutput, ts, "utf8"); // For TypeScript completion at edit-time
 
-	if(!fs.existsSync("lib")) { fs.mkdirSync("lib"); }
-	fs.copyFileSync(schemaInput, "lib/ProjectSchema.json"); // For JSON validation at runtime
+	if(!fs.existsSync("space-lib")) { fs.mkdirSync("space-lib"); }
+	fs.copyFileSync(schemaInput, "space-lib/ProjectSchema.json"); // For JSON validation at runtime
 
 	BuildEngine();
 	BuildDocs();

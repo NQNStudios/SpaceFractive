@@ -13,3 +13,4 @@ lib/**
 src/ProjectSchema.d.ts
 phaser.js
 phaser.min.js
+space-lib/
