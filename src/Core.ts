@@ -133,6 +133,19 @@ export namespace Core
 			}
 		}
 	}
+
+    /**
+     * Call the event handlers registered to the OnGotoSection event. If any of
+     * the event handlers returns true, the rest of them will be skipped.
+     */
+    function CallSectionEventHandlers(id, clone, reason: EGotoSectionReason)
+    {
+        for(let i = 0; i < OnGotoSection.length; i++)
+        {
+            let result = OnGotoSection[i](id, clone, GetSectionTags(id), reason); 
+            if (result) { break; }
+        }
+    }
 	
 	/**
 	* Begins the story. Notifies user code and navigates to the "Start" section.
@@ -436,7 +449,7 @@ export namespace Core
 		SetElementAsCurrentSection(clone);
 		
 		// Notify user script
-		for(let i = 0; i < OnGotoSection.length; i++) { OnGotoSection[i](id, clone, GetSectionTags(id), EGotoSectionReason.Back); }
+        CallSectionEventHandlers(id, clone, EGotoSectionReason.Back);
 
 		// Remove the most recent section from history, now that we're going back to it
 		history.removeChild(previousSection);
@@ -470,7 +483,7 @@ export namespace Core
 		SetElementAsCurrentSection(clone);
 		
 		// Notify user script
-		for(let i = 0; i < OnGotoSection.length; i++) { OnGotoSection[i](id, clone, GetSectionTags(id), EGotoSectionReason.Goto); }
+        CallSectionEventHandlers(id, clone, EGotoSectionReason.Goto);
 	}
 	export function GoToSection(id : string) { GotoSection(id); } // Convenience alias
 
@@ -507,7 +520,7 @@ export namespace Core
 		SetElementAsCurrentSection(clone);
 
 		// Notify user script
-		for(let i = 0; i < OnGotoSection.length; i++) { OnGotoSection[i](id, clone, GetSectionTags(id), EGotoSectionReason.Refresh); }
+        CallSectionEventHandlers(id, clone, EGotoSectionReason.Refresh);
 	}
 	
 	/**
