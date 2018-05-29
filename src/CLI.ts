@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 /**
- * Invoke 'node lib/CLI.js <command> <args>' to execute command-line tools
+ * Invoke 'fractive <command> <args>' to execute command-line tools
  */
 
 require("source-map-support").install();
@@ -28,11 +28,14 @@ import * as cp from "child_process";
 import * as fs from "fs";
 import * as path from "path";
 import * as clc from "cli-color";
+import * as commandLineArgs from "command-line-args";
+import * as commandLineUsage from "command-line-usage";
 
 import { Compiler, CompilerOptions, ProjectDefaults } from "./Compiler";
 
 // True on Windows, false on Mac/Linux, for platform-specific calls
 var isWindows = /^win/.test(process.platform);
+var isMac = /^darwin/.test(process.platform);
 
 /**
  * Invoke the compiler
@@ -40,39 +43,53 @@ var isWindows = /^win/.test(process.platform);
  */
 function Compile(args : Array<string>)
 {
-	if(!args || args.length < 1)
-	{
-		Compiler.ShowUsage();
-		process.exit(1);
-	}
-	else
-	{
-		let buildPath = args[0];
+    let optionDefinitions = [
+        { name: 'buildPath', type: String, defaultOption: true, defaultValue: '.' },
+        { name: 'help', type: Boolean },
+        { name: 'dry-run', type: Boolean },
+        { name: 'verbose', alias: 'v', type: Boolean },
+        { name: 'debug', type: Boolean }
+    ];
 
-		// If we got a directory, assume we're looking for a fractive.json in its root
-		if(fs.lstatSync(buildPath).isDirectory()) { buildPath = path.join(buildPath, "fractive.json"); }
+    let options : CompilerOptions = null;
 
-		if(fs.existsSync(buildPath))
-		{
-			let options : CompilerOptions = {};
-			for(let i = 1; i < args.length; i++)
-			{
-				switch(args[i])
-				{
-					case "--dry-run":	{ options.dryRun = true; break; }
-					case "--verbose":	{ options.verbose = true; break; }
-					case "--debug":		{ options.debug = true; break; }
-				}
-			}
-			Compiler.Compile(buildPath, options);
-		}
-		else
-		{
-			console.error(clc.red(`Couldn't find project config "${buildPath}"`));
-			process.exit(1);
-		}
-	}
+    try {
+        options = commandLineArgs(optionDefinitions, { argv: args });
+    }
+    catch (err) {
+        CompileUsage();
+    }
+
+    if (options.help) {
+        CompileUsage();
+    }
+    else {
+        Compiler.Compile(options);
+    }
 }
+
+function CompileUsage() {
+    let sections = [
+        {
+            header: 'Compiling Fractive Stories',
+            content: '$ fractive compile <options>'
+        },
+        {
+            header: 'Options',
+            optionList: [
+                { name: 'buildPath (optional)', description: 'Either the root directory of a Fractive project, or the path to a valid Fractive project file.'},
+                { name: 'dry-run', description: "Log what would have been done, but do not actually change any files." },
+                { name: 'verbose', description: 'Log more detailed build information.' },
+                { name: 'debug', description: 'Log debugging information during the build.' },
+
+            ]
+        }
+    ];
+
+    let usage = commandLineUsage(sections);
+    console.log(usage);
+}
+
 
 /**
  * Scaffold a new Fractive project
@@ -80,21 +97,14 @@ function Compile(args : Array<string>)
  */
 function Create(args : Array<string>)
 {
-	if(!args || args.length < 1)
-	{
-		console.log(``);
-		console.log(`Usage:`);
-		console.log(`${clc.green("space-fractive create")} ${clc.blue("<storyDirectory>")}`);
-		console.log(``);
-		console.log(`${clc.blue("storyDirectory:")} The folder path where the new story project should be created.`);
-		console.log(``);
-		console.log(`${clc.green("space-fractive create /Users/Desktop/MyStory")}`);
-		console.log(``);
-		process.exit(1);
-	}
+    let optionDefinitions = [
+        { name: "storyDirectory", type: String, defaultOption: true }
+    ];
 
-	// Validate the project directory, or create it if it doesn't already exist
-	let projectDir : string = args[0];
+    let options = commandLineArgs(optionDefinitions, { argv: args});
+
+    // Validate the project directory, or create it if it doesn't already exist
+	let projectDir : string = options.storyDirectory;
 	if(fs.existsSync(projectDir))
 	{
 		let files : Array<string> = fs.readdirSync(projectDir, "utf8");
@@ -126,62 +136,54 @@ function Create(args : Array<string>)
 	console.log(clc.green(`Project created at ${projectDir}`));
 }
 
-function HandleArgs()
-{
-	for(let i = 2; i < process.argv.length; i++)
-	{
-		switch(process.argv[i])
-		{
-			// compile <storyDirectory|configFilePath> [options]
-			case "compile": { Compile(process.argv.slice(i + 1)); return; }
+function Docs() {
+    let docPath : string = path.join(__dirname, "../doc/build/index.html");
+    if(isWindows) { cp.execSync(`start "" "${docPath}"`); }
+    else if (isMac) { cp.execSync(`open ${docPath}`); }
+    else { console.log(`To view the Fractive user guide, open ${docPath} in your web browser.`); }
+    return;
+}
 
-			// create <storyDirectory>
-			case "create": { Create(process.argv.slice(i + 1)); return; }
-
-			// doc [no options]
-			case "help":
-			{
-				let docPath : string = path.join(__dirname, "../doc/build/index.html");
-				if(isWindows) { cp.execSync(`start "" "${docPath}"`); }
-				else { cp.execSync(`open ${docPath}`); }
-				return;
-			}
-
-			// examples [no options]
-			case "examples":
-			{
-				let examplesPath : string = path.join(__dirname, "../examples");
-				if(isWindows) { cp.execSync(`start "" "${examplesPath}"`); }
-				else { cp.execSync(`open ${examplesPath}`); }
-				return;
-			}
-
-			// unknown
-			default:
-			{
-				let message : string = `Unrecognized argument '${process.argv[i]}'`;
-				console.log(`\n${clc.red(message)}`);
-				ShowUsage();
-				process.exit(1);
-			}
-		}
-	}
+function Examples() {
+    let examplesPath : string = path.join(__dirname, "../examples");
+    if(isWindows) { cp.execSync(`start "" "${examplesPath}"`); }
+    else if (isMac) { cp.execSync(`open ${examplesPath}`); }
+    else { console.log(`To view the Fractive examples guide, navigate to ${examplesPath} in your file browser.`); }
+    return;
 }
 
 function ShowUsage()
 {
-	console.log(``);
-	console.log(`Usage:`);
-	console.log(`${clc.green("space-fractive")} ${clc.blue("<command>")} ${clc.yellow("[options]")}`);
-	console.log(``);
-	console.log(`${clc.blue("help")}        Launch the Fractive user guide`);
-	console.log(`${clc.blue("compile")}     Compile an existing Fractive project`);
-	console.log(`${clc.blue("create")}      Create a new Fractive project`);
-	console.log(`${clc.blue("examples")}    Browse Fractive example projects`);
-	console.log(``);
-	console.log(`Enter a command without ${clc.yellow("options")} to see usage instructions for that command`);
-	console.log(``);
+    // Generate a command-line usage guide using this module: https://github.com/75lb/command-line-usage
+    let sections = [
+        {
+            header: 'Fractive',
+            content: 'Fractive is a hypertext authoring tool, primarily intended for the creation of interactive fiction.'
+        },
+        {
+            header: 'Commands',
+            content: [
+                { name: 'help', summary: 'Show this command-line usage guide'},
+                { name: 'docs', summary: 'Launch the Fractive user guide (Web browser required)' },
+                { name: 'examples', summary: 'Browse Fractive example projects (Web browser required)' },
+                { name: 'create', summary: 'Create a new Fractive project' },
+                { name: 'compile [--help]', summary: 'Compile an existing Fractive project' }
+
+            ]
+        }
+    ];
+    let usage = commandLineUsage(sections);
+    console.log(usage);
 }
+
+
+let commands = {
+    'create': Create,
+    'compile': Compile,
+    'docs': Docs,
+    'help': ShowUsage,
+    'examples': Examples
+};
 
 if(process.argv.length < 3)
 {
@@ -190,5 +192,16 @@ if(process.argv.length < 3)
 }
 else
 {
-	HandleArgs();
+    // The first argument following 'fractive' should be a valid command
+    if (process.argv[2] in commands)
+    {
+        commands[process.argv[2]](process.argv.slice(3));
+    }
+    else
+    {
+        let message : string = `'${process.argv[2]}' is not a valid fractive command.`;
+        console.log(`\n${clc.red(message)}`);
+        ShowUsage();
+        process.exit(1);
+    }
 }
