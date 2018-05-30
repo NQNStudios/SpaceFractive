@@ -133,16 +133,58 @@ export namespace Core
 			}
 		}
 	}
+
+    /**
+     * Parses GET parameters out of the URL used to access a Fractive story. 
+     * @return A dictionary containing all URL parameters
+     * Based on: https://www.kevinleary.net/javascript-get-url-parameters/
+     * Also: https://stackoverflow.com/questions/8486099/how-do-i-parse-a-url-query-parameters-in-javascript
+     */
+    export function GetUrlParameters() {
+        var params = {};
+
+        // Decode all the text following '?'
+        let startingIndex = window.location.href.indexOf('?');
+
+        // Don't try to parse parameters if there are none
+        if (startingIndex == -1)
+        {
+            return {};
+        }
+
+        let parameters = window.location.href.slice(startingIndex + 1)
+        let definitions = parameters.split( '&' );
+
+        definitions.forEach(function(val) {
+            var parts = val.split( '=', 2 );
+            params[ parts[ 0 ] ] = decodeURIComponent(parts[ 1 ]);
+        } );
+
+        return params;
+    }
+
+    export function SetUrlParameters() {
+    }
 	
 	/**
-	* Begins the story. Notifies user code and navigates to the "Start" section.
+     * Begins the story. Notifies user code and navigates to the "Start" section,
+     * or the section specified by the URL request's "Start" parameter.
 	*/
 	// @ts-ignore This is never called code but a call to it is written into target HTML by the compiler
 	export function BeginStory()
 	{
+        // Notify all OnBeginStory event handlers
 		for(let i = 0; i < OnBeginStory.length; i++) { OnBeginStory[i](); }
 
-        // Starting section is defined with the "Start" tag.
+        // If the URL specified the Start parameter, start at the specified
+        // section.
+        let params = UrlParameters();
+        if ('Start' in params) {
+            GotoSection(params['Start']);
+            return;
+        }
+
+        // Otherwise the starting section is the one defined with the "Start" tag.
         let startSections = GetSectionsWithTag("Start");
         if (startSections.length == 0)
         {
