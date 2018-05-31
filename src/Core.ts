@@ -472,7 +472,7 @@ export namespace Core
 		SetElementAsCurrentSection(clone);
 
 		// Notify user script
-        CallSectionEventHandlers(id, clone, EGotoSectionReason.Back);
+        CallSectionEventHandlers(id, clone, Core.EGotoSectionReason.Back);
 
 		// Remove the most recent section from history, now that we're going back to it
 		history.removeChild(previousSection);
@@ -506,7 +506,7 @@ export namespace Core
 		SetElementAsCurrentSection(clone);
 
 		// Notify user script
-        CallSectionEventHandlers(id, clone, EGotoSectionReason.Goto);
+        CallSectionEventHandlers(id, clone, Core.EGotoSectionReason.Goto);
 	}
 	export function GoToSection(id : string) { GotoSection(id); } // Convenience alias
 
@@ -572,7 +572,7 @@ export namespace Core
 		SetElementAsCurrentSection(clone);
 
 		// Notify user script
-        CallSectionEventHandlers(id, clone, EGotoSectionReason.Refresh);
+        CallSectionEventHandlers(id, clone, Core.EGotoSectionReason.Refresh);
 	}
 
 	/**
