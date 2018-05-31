@@ -591,7 +591,8 @@ export namespace Core
 		}
 		if(targetObject === undefined)
 		{
-			return `{${type} "${name}" is not declared}`;
+            console.log(`{${type} "${name}" is not declared}`);
+            return undefined;
 		}
 
 		return targetObject;
@@ -637,4 +638,7 @@ export namespace Core
 		// Activate DOM mutation observer for the new section
 		currentSectionObserver.observe(e, currentSectionObserverConfig);
 	}
+
+    // Export Core into the browser's global namespace
+    window['Core'] = Core;
 }

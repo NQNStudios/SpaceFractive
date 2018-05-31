@@ -1,5 +1,5 @@
-var insertMarkdown = "";
-function addSection() {
+window.insertMarkdown = "";
+window.addSection = function() {
   insertMarkdown = "{{Section2.5}}\n...\n[Next]({@Section3})";
   Core.RefreshCurrentSection();
 
