@@ -168,16 +168,8 @@ export namespace Compiler
 		// Base template
 		let template : string = fs.readFileSync(templatePath, "utf8");
 
-		// Imported scripts
-		let scriptSection : string = '';
-		 // Insert Phaser
-		scriptSection += `<script type="text/javascript" src="phaser.js"></script>`;
-		// Insert all story scripts
-		scriptSection += "<script type='text/javascript'>";
-
 		// Insert all bundled scripts, including Core.js
-		scriptSection += `${javascript}`;
-		scriptSection += "</script>";
+        let scriptSection = `<script type='text/javascript'>${javascript}</script>`;
 
 		template = InsertHtmlAtMark(scriptSection, template, 'script');
 
@@ -205,18 +197,13 @@ export namespace Compiler
 		// Insert the story title from project metadata
 		template = InsertHtmlAtMark(project.title, template, 'title', false); // !required
 
-		// Insert the story's "main method".
+		// Insert the story's phaser arguments to the global scope.
 		template += '<script type="text/javascript">';
-		template += "window.onload = function() {";
 
 		// Pass compiler arguments to StoryMain.js
 		let args = project.phaserArguments;
-		template += `var args = ` + JSON.stringify(args) + ";";
+		template += `window.__phaserArgs = ` + JSON.stringify(args) + ";";
 
-		// Inject StoryMain.js
-		template += fs.readFileSync(__dirname + '/../src/StoryMain.js');
-
-		template += "};";
 		template += "</script>";
 
 		if(project.outputFormat === 'minify')
@@ -364,11 +351,11 @@ export namespace Compiler
 		if(!fs.existsSync(outputDir)) { CreateDirectoryRecursive(outputDir); }
 
 		// Bundle all the Javascript files with Browserify
-        let browserifyFiles = [path.resolve(__dirname, "Core.js")];
+        let browserifyFiles = [path.resolve(__dirname, "Core.js"), path.resolve(__dirname, "../src/StoryMain.js")];
         for (let i = 0; i < targets.javascriptFiles.length; i++)
         {
             let scriptFile = path.resolve(projectPath, targets.javascriptFiles[i]);
-            browserifyFiles[i+1] = scriptFile;
+            browserifyFiles.push(scriptFile);
         }
         /*console.log(browserifyFiles);*/
 
@@ -421,9 +408,6 @@ export namespace Compiler
                         fs.copyFileSync(sourcePath, destPath);
                     }
                 }
-
-		// Copy Phaser library file
-		fs.copyFileSync(__dirname + '/../phaser-ce/build/phaser.js', path.resolve(outputDir, 'phaser.js'));
 
                 // Write the final index.html. We report this after copying assets, even though we actually prepared it before,
                 // because it feels more natural to have the last reported output file be the file that actually runs our game.
