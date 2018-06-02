@@ -382,7 +382,8 @@ export namespace Compiler
         // directory
         browserify(browserifyFiles, {
             standalone: 'Fractive',
-            paths: storyModulePaths
+            paths: storyModulePaths,
+            debug: true
         }).bundle(function(error, buffer) {
             if (error)
             {
